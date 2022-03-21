@@ -15,14 +15,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        # with:
-        #   ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Setup Julia ${{ env.JULIA_VERSION }}
         uses: julia-actions/setup-julia@v1
         with:
           version: ${{ env.JULIA_VERSION }}
       - name: Update Julia dependencies
-        run: julia --color=yes --threads=auto --project=@. -e 'import Pkg; Pkg.update()'
+        run: |
+          julia --color=yes --threads=auto --project=@. -e 'import Pkg; Pkg.update()'
+          julia --color=yes --threads=auto --project=test -e 'import Pkg; Pkg.update()'
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v3
