@@ -162,3 +162,13 @@ docs/site/
 # environment.
 # Manifest.toml
 LocalPreferences.toml
+
+# For jupyter
+.ipynb_checkpoints/
+# For Mac
+*.DS_Store
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
