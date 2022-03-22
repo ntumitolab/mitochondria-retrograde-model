@@ -20,4 +20,4 @@ addprocs(exeflags="--project=$(Base.active_project())");
 @time df = rs.paramSearching(rs.rtgM4(); num_sim=1e9, save_iter=1e6, distributed=true, saveall=false)
 
 #'Output
-CSV.write("../../src/solution_rtgM4.csv", df)
+CSV.write("../../src/data/solution_rtgM4.csv", df)
