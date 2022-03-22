@@ -1,7 +1,0 @@
-[deps]
-CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
-RetroSignalModel = "413adb04-e75d-4cfe-b7ca-413dd9cc07d4"
-Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
-Weave = "44d3d7a6-8a23-5bf8-98c5-b353f8df5ec9"
