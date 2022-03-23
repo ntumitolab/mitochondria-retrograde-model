@@ -25,7 +25,7 @@ jobs:
           julia --color=yes --threads=auto --project=test -e 'import Pkg; Pkg.update()'
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.PAT }}
           labels: |
