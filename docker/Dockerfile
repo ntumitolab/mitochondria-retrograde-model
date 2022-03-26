@@ -2,6 +2,9 @@ FROM python:3.10-slim
 
 WORKDIR /usr/src/app
 
+# If you use PackageCompiler, you'll need compilers
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
+
 # Julia
 ENV JULIA_PATH /usr/local/julia
 ENV PATH $JULIA_PATH/bin:$PATH
