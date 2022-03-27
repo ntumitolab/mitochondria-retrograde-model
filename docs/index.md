@@ -1,16 +1,6 @@
-# Welcome to your Jupyter Book
+# Mitochondria retrograde ODE model
 
-This is a small sample book to give you a feel for how book content is
-structured.
+## Notebook execution status
 
-:::{note}
-Here is a note!
-:::
-
-And here is a code block:
-
+```{nb-exec-table}
 ```
-e = mc^2
-```
-
-Check out the content pages bundled with this sample book to see more.
