@@ -1,4 +1,4 @@
-name: CI
+name: Build Docker Image and Jupyter Book Website
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
     # Publish semver tags as releases.
-    tags: ["v*.*.*"]
+    tags: ["*.*"]
   pull_request:
     branches: [main]
 
@@ -19,11 +19,12 @@ env:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Workaround for incorrect digest: https://github.com/docker/build-push-action/issues/461
+      # Workaround for icorrect digest: https://github.com/docker/build-push-action/issues/461
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v1.6.0
 
@@ -40,8 +41,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            type=ref,priority=600, event=pr
+            type=ref,priority=600, event=tag
+            type=raw,value=latest,priority=600, enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
             type=sha,enable=true,priority=100,prefix=,suffix=,format=long
           flavor: |
             latest=false
@@ -57,7 +59,8 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Push Docker Image
-        # if: github.event_name != 'pull_request'
+        # Do not push on PR's
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -70,10 +73,10 @@ jobs:
       - name: Cache Jupyter book outputs
         uses: actions/cache@v3
         env:
-          cache-name: "jb"
+          cache-name: "jb-01"
         with:
-          path: docs/_build/.jupyter_cache/
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Manifest.toml', 'requirements.txt') }}-${{ hashFiles('docs/**/*.ipynb', 'docs/**/*.md') }}
+          path: docs/_build/
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Manifest.toml', 'requirements.txt') }}-${{ hashFiles('docs/**/*.*') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Manifest.toml', 'requirements.txt') }}
 
@@ -88,27 +91,3 @@ jobs:
           force_orphan: true
           publish_dir: docs/_build/html
           full_commit_message: ${{ github.event.head_commit.message }}
-  test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - x64 - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        version:
-          - "1.7"
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-      - uses: julia-actions/setup-julia@v1
-        with:
-          version: ${{ matrix.version }}
-      - uses: julia-actions/cache@v1
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
-      - uses: julia-actions/julia-processcoverage@v1.2
-      - uses: codecov/codecov-action@v2.1.0
-        with:
-          file: lcov.info
