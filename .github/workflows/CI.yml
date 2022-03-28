@@ -73,15 +73,15 @@ jobs:
       - name: Cache Jupyter book outputs
         uses: actions/cache@v3
         env:
-          cache-name: "jb-01"
+          cache-name: "jb-2022-03-28"
         with:
-          path: docs/_build/
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Manifest.toml', 'requirements.txt') }}-${{ hashFiles('docs/**') }}
+          path: docs/_build/.jupyter_cache/
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Manifest.toml', 'requirements.txt') }}-${{ hashFiles('docs/**/*.ipynb', 'docs/**/*.md') }}
           restore-keys: |
             ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Manifest.toml', 'requirements.txt') }}
 
       - name: Build Jupyter Books
-        run: docker run -v ${{ github.workspace }}:/work ${{ env.IMAGE_NAME }}:test jb build /work/docs
+        run: docker run -v ${{ github.workspace }}:/work ${{ env.IMAGE_NAME }}:test jb build /work/docs --warningiserror --keep-going -v
 
       - name: Deploy Website
         uses: peaceiris/actions-gh-pages@v3.8.0
