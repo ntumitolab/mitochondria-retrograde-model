@@ -13,7 +13,7 @@ sysimage_path = joinpath(@__DIR__, "sysimage.so")
 @info "SysImage path: " sysimage_path
 
 PackageCompiler.create_sysimage(
-    ["CSV", "CairoMakie", "DataFrames", "DifferentialEquations", "JuMP", "ModelingToolkit", "Optim", "Plots"];
+    ["Catalyst", "CairoMakie", "DataFrames", "DifferentialEquations", "ModelingToolkit", "Plots"];
     project=".",
     sysimage_path=sysimage_path,
     cpu_target=PackageCompiler.default_app_cpu_target()
