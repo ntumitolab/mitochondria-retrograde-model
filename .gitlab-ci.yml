@@ -69,8 +69,8 @@ build-notebooks:
       paths:
         - $CI_PROJECT_DIR/.julia/
   before_script:
-    - julia --color=yes --threads=auto -e 'import Pkg; Pkg.add("IJulia"); Pkg.build("IJulia")'
     - julia --color=yes --threads=auto --project=@. -e 'import Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile()'
+    - julia --color=yes --threads=auto -e 'import Pkg; Pkg.add("IJulia"); Pkg.build("IJulia")'
     - jb build docs --warningiserror --keep-going
   script:
     - echo "Test complete!"
