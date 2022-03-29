@@ -7,7 +7,10 @@ end
 
 
 """
-Activation Model:
+```julia
+actM1_model()
+```
+Build the Activation Model
 """
 function actM1_model()
     actM1 = @reaction_network begin
