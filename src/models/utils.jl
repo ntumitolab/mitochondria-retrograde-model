@@ -15,19 +15,19 @@ function get_protein_lookup(model::ReactionSystem)
     =#
     protein_lookup = Dict(
         :s => 1, # input: mitochondrial damage signal
-        :Rtg1 => findID(spec_names, ["1"]),
-        :Rtg2 => findID(spec_names, ["2"]),
-        :Rtg3 => findID(spec_names, ["3"]),
-        :Bmh => findID(spec_names, ["Bmh"]),
-        :Mks => findID(spec_names, ["Mks"]),
-        :bmhmks => findID(spec_names, ["BmhMks"]),
-        :Rtg1_n => findID(spec_names, ["1", "_n"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("1", string(i)) && occursin("_n", string(i))],
-        :Rtg1_c => findID(spec_names, ["1", "_c"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("1", string(i)) && occursin("_c", string(i))],
-        :Rtg3_n => findID(spec_names, ["3", "_n"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("_n", string(i))],
-        :Rtg3_c => findID(spec_names, ["3", "_c"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("_c", string(i))],
-        :Rtg13_c => findID(spec_names, ["1", "3","_c"]), #[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("1", string(i)) && occursin("_c", string(i))],
-        :Rtg13_n => findID(spec_names, ["1", "3","_n"]), #[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("1", string(i)) && occursin("_n", string(i))],
-        :Rtg13 => findID(spec_names, ["1","3"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("1", string(i))]
+        :Rtg1 => find_id(spec_names, ["1"]),
+        :Rtg2 => find_id(spec_names, ["2"]),
+        :Rtg3 => find_id(spec_names, ["3"]),
+        :Bmh => find_id(spec_names, ["Bmh"]),
+        :Mks => find_id(spec_names, ["Mks"]),
+        :bmhmks => find_id(spec_names, ["BmhMks"]),
+        :Rtg1_n => find_id(spec_names, ["1", "_n"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("1", string(i)) && occursin("_n", string(i))],
+        :Rtg1_c => find_id(spec_names, ["1", "_c"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("1", string(i)) && occursin("_c", string(i))],
+        :Rtg3_n => find_id(spec_names, ["3", "_n"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("_n", string(i))],
+        :Rtg3_c => find_id(spec_names, ["3", "_c"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("_c", string(i))],
+        :Rtg13_c => find_id(spec_names, ["1", "3", "_c"]), #[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("1", string(i)) && occursin("_c", string(i))],
+        :Rtg13_n => find_id(spec_names, ["1", "3", "_n"]), #[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("1", string(i)) && occursin("_n", string(i))],
+        :Rtg13 => find_id(spec_names, ["1", "3"]),#[ind for (ind,i) in enumerate(spec_names) if occursin("3", string(i)) && occursin("1", string(i))]
     )
     return protein_lookup
 end
@@ -60,10 +60,10 @@ end
 Create initial values of reaction systems based on protein total concentration.
 Each concentration is solved by Linear programming.
 """
-function init_u(model::ReactionSystem, protein_lookup; expLevels=getExpLevels(;condition=DefaultCondition), idx_s::Integer = 1, init_s=S_SPAN[1], optimizer=GLPK.Optimizer)
+function init_u(model::ReactionSystem, protein_lookup; expLevels=getExpLevels(; condition=DefaultCondition), idx_s::Integer=1, init_s=S_SPAN[1], optimizer=GLPK.Optimizer)
     RTGm = jp.Model(optimizer)
-    numVar = _find_id(protein_lookup, maximum) 
-    jp.@variables(RTGm, begin 
+    numVar = _find_id(protein_lookup, maximum)
+    jp.@variables(RTGm, begin
         us[1:numVar] >= 0
     end)
 
@@ -79,13 +79,13 @@ function init_u(model::ReactionSystem, protein_lookup; expLevels=getExpLevels(;c
     u_opt = jp.value.(us)
     u_opt[idx_s] = init_s
 
-    # U vec constructor 
+    # U vec constructor
     U = @LArray u_opt tuple(Symbol.(catalyst_name(model))...)
     return U
 end
 
-function init_u(m::RTGmodel;kwags...)
-    return init_u(m.model, m.protein_lookup;kwags...)
+function init_u(m::RTGmodel; kwags...)
+    return init_u(m.model, m.protein_lookup; kwags...)
 end
 
 
@@ -96,24 +96,24 @@ function init_p(m::ReactionSystem; idx_hill_coefs=[1], K_dist=K_dist, K_N_dist=K
         p[i] = rand(K_N_dist) + 1
     end
 
-    Names = catalyst_name(m;fcall=Catalyst.params)
+    Names = catalyst_name(m; fcall=Catalyst.params)
 
     U = @LArray p tuple(Symbol.(Names)...)
     return U
 end
 
 function get_u(data_path, model::ReactionSystem, id;)
-    name_proc_f = x-> Symbol.(catalyst_name(x))
+    name_proc_f = x -> Symbol.(catalyst_name(x))
     return get_param_csv(data_path, model, id; name_proc_f=name_proc_f)
 end
 
 function get_p(data_path, model::ReactionSystem, id;)
-    name_proc_f = x-> Symbol.(Catalyst.params(x))
+    name_proc_f = x -> Symbol.(Catalyst.params(x))
     return get_param_csv(data_path, model, id; name_proc_f=name_proc_f)
 end
 
-function get_param_csv(data_path, model::ReactionSystem, id; name_proc_f= x->x)
-    df = readCSV(data_path)
+function get_param_csv(data_path, model::ReactionSystem, id; name_proc_f=x -> x)
+    df = read_csv(data_path)
     paramNames = name_proc_f(model)
     paramD = df[id, paramNames]
     vals = collect(paramD)
