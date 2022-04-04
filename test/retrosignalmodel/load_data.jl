@@ -7,8 +7,8 @@ import RetroSignalModel as rs
     df = DataFrame(CSV.File(fn))
 end
 
-exp = rs.getExpLevels()
-cond = rs.getConditions()
+exp = rs.get_expression_levels()
+cond = rs.get_conditions()
 
 prNamesRNA = [:Rtg1, :Rtg2, :Rtg3, :Bmh, :Mks]
 prNamesCond = ["Rtg1", "Rtg2", "Rtg3", "Mks"]
@@ -31,6 +31,6 @@ end
     df = rs.read_csv(rs.DataFiles.solution_rtgM4)
     num_sols = size(df)[1]
     for i in 1:num_sols
-        @test rs.isValid(rs.rtgM4(i))
+        @test rs.is_valid(rs.rtgM4(i))
     end
 end

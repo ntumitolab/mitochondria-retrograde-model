@@ -5,4 +5,5 @@ format: jb-book
 root: index
 chapters:
   - file: expression_level
+  - file: steadystates
   - file: validation
