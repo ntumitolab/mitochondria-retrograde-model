@@ -60,14 +60,17 @@ end
 Create initial values of reaction systems based on protein total concentration.
 Each concentration is solved by Linear programming.
 """
-function init_u(model::ReactionSystem, protein_lookup; expLevels=getExpLevels(; condition=DefaultCondition), idx_s::Integer=1, init_s=S_SPAN[1], optimizer=GLPK.Optimizer)
+function init_u(model::ReactionSystem, protein_lookup; expLevels=get_expression_levels(; condition=DefaultCondition), idx_s::Integer=1, init_s=S_SPAN[1], optimizer=GLPK.Optimizer)
+
     RTGm = jp.Model(optimizer)
     numVar = _find_id(protein_lookup, maximum)
+
+    # All concentrations should be non-negative
     jp.@variables(RTGm, begin
         us[1:numVar] >= 0
     end)
 
-    # Add constraints
+    # Add constraints for conservation relationships
     consts = []
     for k in keys(expLevels)
         pr_idx = protein_lookup[k]
@@ -75,6 +78,7 @@ function init_u(model::ReactionSystem, protein_lookup; expLevels=getExpLevels(; 
         jp.set_name(consts[end], string(k))
     end
 
+    # Objectives?
     jp.optimize!(RTGm)
     u_opt = jp.value.(us)
     u_opt[idx_s] = init_s
@@ -88,8 +92,9 @@ function init_u(m::RTGmodel; kwags...)
     return init_u(m.model, m.protein_lookup; kwags...)
 end
 
-
-
+"""
+Randomly Assign parameters to the model
+"""
 function init_p(m::ReactionSystem; idx_hill_coefs=[1], K_dist=K_dist, K_N_dist=K_N_dist)
     p = rand(K_dist, length(Catalyst.params(m)))
     for i in idx_hill_coefs
@@ -102,13 +107,13 @@ function init_p(m::ReactionSystem; idx_hill_coefs=[1], K_dist=K_dist, K_N_dist=K
     return U
 end
 
-function get_u(data_path, model::ReactionSystem, id;)
+function get_u(data_path, model::ReactionSystem, id)
     name_proc_f = x -> Symbol.(catalyst_name(x))
     return get_param_csv(data_path, model, id; name_proc_f=name_proc_f)
 end
 
-function get_p(data_path, model::ReactionSystem, id;)
-    name_proc_f = x -> Symbol.(Catalyst.params(x))
+function get_p(data_path, model::ReactionSystem, id)
+    name_proc_f = x -> Symbol.(ModelingToolkit.parameters(x))
     return get_param_csv(data_path, model, id; name_proc_f=name_proc_f)
 end
 

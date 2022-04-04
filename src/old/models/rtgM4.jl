@@ -1,11 +1,11 @@
 @with_kw struct rtgM4{A,B,C} <: RTGmodel
     model::A = rtgM4_model()
     protein_lookup = get_protein_lookup(model)
-    u::B = get_u(DataFiles.solution_rtgM4, model, default_sol_i)
-    p::C = get_p(DataFiles.solution_rtgM4, model, default_sol_i)
+    u::B = get_u(DataFiles.solution_rtgM4, model, DEFAULT_SOL_IDX)
+    p::C = get_p(DataFiles.solution_rtgM4, model, DEFAULT_SOL_IDX)
 end
 
-function rtgM4(sol_id::Integer;sol_csv = DataFiles.solution_rtgM4)
+function rtgM4(sol_id::Integer; sol_csv=DataFiles.solution_rtgM4)
     model = rtgM4_model()
     u = get_u(sol_csv, model, sol_id)
     p = get_p(sol_csv, model, sol_id)
@@ -17,11 +17,11 @@ Modified version from rtgM3
 1. Change input to Hill kinetics
 """
 function rtgM4_model()
-    model= @reaction_network begin
+    model = @reaction_network begin
         #=
         Input
         =#
-        (1), s→s
+        (1), s → s
 
         #=
         Modulation Layer
@@ -46,7 +46,7 @@ function rtgM4_model()
         (k13_n, kn13_n), Rtg1_n + Rtg3_i_n ↔ Rtg13_i_n #[3]
 
         # Translocation
-        (k1in , k1out), Rtg1_c ↔ Rtg1_n #[2]
+        (k1in, k1out), Rtg1_c ↔ Rtg1_n #[2]
         (k3inA, k3outA), Rtg3_a_c ↔ Rtg3_a_n #[2]
         (k3inI, k3outI), Rtg3_i_c ↔ Rtg3_i_n
 

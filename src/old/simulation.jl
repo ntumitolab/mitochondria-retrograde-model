@@ -1,22 +1,22 @@
-struct RTGoutput{T}
+struct RTGOutput{T}
     IsNucAccum::Bool
     Conc_Cyt::T
     Conc_Nuc::T
     threshold::T
 end
 
-IsNucAccum(res::RTGoutput) = res.IsNucAccum
+IsNucAccum(res::RTGOutput) = res.IsNucAccum
 
 """
 Validate responses
 """
-function isValid(m::RTGmodel; kwags...)
-    valid, _ = try_conditions(m; kwags...)
+function is_valid(m::RTGmodel; kwargs...)
+    valid, _ = try_conditions(m; kwargs...)
     return valid
 end
 
-function getOutput(m::RTGmodel, gfp; kwags...)
-    return getOutput(m.u, gfp, m.protein_lookup; kwags...)
+function check_nu_accumulation(m::RTGmodel, gfp; kwargs...)
+    return check_nu_accumulation(m.u, gfp, m.protein_lookup; kwargs...)
 end
 
 """
@@ -25,7 +25,7 @@ Output:
 1 : nucleus concentration is higher than the cytosolic one
 0 : otherwise
 """
-function getOutput(sol, gfp, protein_lookup; threshold=TRANS_THRESHOLD)
+function check_nu_accumulation(sol, gfp, protein_lookup; threshold=TRANS_THRESHOLD)
     gfp = lowercase(gfp)
     if gfp == "rtg1"
         cyt_index = protein_lookup[:Rtg1_c]
@@ -42,17 +42,17 @@ function getOutput(sol, gfp, protein_lookup; threshold=TRANS_THRESHOLD)
 
     NucAccum = total_conc_nuc > threshold * total_conc_cyt ? true : false
 
-    return RTGoutput(NucAccum, total_conc_cyt, total_conc_nuc, threshold)
+    return RTGOutput(NucAccum, total_conc_cyt, total_conc_nuc, threshold)
 end
 
 """
 Knockout specified protein with name [`prName`](@ref), and set as low concentration equal to [`DEL_CONC`](@ref)
 """
-function knockout(m::RTGmodel, prNames; del_conc=DEL_CONC, WildExpLevels::NamedTuple=getExpLevels(; condition=DefaultCondition), kwags...)
+function knockout(m::RTGmodel, prNames; del_conc=DEL_CONC, WildExpLevels::NamedTuple=get_expression_levels(; condition=DefaultCondition), kwargs...)
 
     newConcs = fill(del_conc, length(prNames))
     knockout_exp = setTuples(WildExpLevels, prNames, newConcs)
-    u = init_u(m; expLevels=knockout_exp, kwags...)
+    u = init_u(m; expLevels=knockout_exp, kwargs...)
     return u
 end
 
@@ -61,19 +61,20 @@ end
 """
 Solve steady state of [`RTGmodel`](@ref) based on given initial variables (`u`). Noted that fieldname `u` is ignored.
 """
-function getSteadySol(m::RTGmodel, u; ssmethod=SSMETHOD)
+function get_steadysol(m::RTGmodel, u; ssmethod=DEFAULT_SSMETHOD)
     #todo
-    prob = DEsteady(func=m.model, u0=u, p=m.p, method=ssmethod)
-    sol = solve(prob)
+    prob = ODEProblem(m.model, u, (0.0, 1.0), m.p)
+    ssprob = SteadyStateProblem(prob)
+    sol = solve(ssprob, method=ssmethod)
     return sol
 end
 
 """
 Returm [`RTGmodel`](@ref) with `u` in steady state.
 """
-function getSteady(m::RTGmodel; warning=true, kwags...)
+function get_steadysol(m::RTGmodel; warning=true, kwargs...)
     # consider
-    sol_ss = getSteadySol(m, m.u; kwags...)
+    sol_ss = get_steadysol(m, m.u; kwargs...)
     model = get_ctor(m)
     m_ss = model(m, sol_ss.u, m.p, m.protein_lookup)
 
@@ -87,7 +88,7 @@ end
 """
 Try conditions of the model with given initial variables and parameters.
 """
-function try_conditions(m::RTGmodel; expLevels=getExpLevels(; condition=DefaultCondition), S_SPAN=S_SPAN, del_conc=DEL_CONC, TRANS_THRESHOLD=TRANS_THRESHOLD, SSMETHOD=SSMETHOD, conditions=getConditions(; df=DataTables.BoolCond), Break=true, Cond_random=true, input_name="s")
+function try_conditions(m::RTGmodel; expLevels=get_expression_levels(; condition=DefaultCondition), S_SPAN=S_SPAN, del_conc=DEL_CONC, TRANS_THRESHOLD=TRANS_THRESHOLD, DEFAULT_SSMETHOD=DEFAULT_SSMETHOD, conditions=get_conditions(; df=DataTables.BoolCond), Break=true, Cond_random=true, input_name="s")
 
     s_idx = findfirst(x -> x == input_name, catalyst_name(m.model))
     valid = true
@@ -118,10 +119,10 @@ function try_conditions(m::RTGmodel; expLevels=getExpLevels(; condition=DefaultC
         u_k[s_idx] = S_SPAN[cond[:s]+1]
 
         # Steady state
-        u_ss = getSteadySol(m, u_k; ssmethod=SSMETHOD)
+        u_ss = get_steadysol(m, u_k; ssmethod=DEFAULT_SSMETHOD)
 
         # Status of RTG switch
-        output = getOutput(u_ss, cond[:gfp], m.protein_lookup; threshold=TRANS_THRESHOLD)
+        output = check_nu_accumulation(u_ss, cond[:gfp], m.protein_lookup; threshold=TRANS_THRESHOLD)
 
         test_log[tn] = IsNucAccum(output)
         if IsNucAccum(output) == cond[:Trans2Nuc]

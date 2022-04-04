@@ -1,14 +1,6 @@
-"""
-Test multi-processing
-"""
-# Load library to main worker
-@time using Distributed, RetroSignalModel, CSV
-# Add workers
-addprocs(1, exeflags="--project=$(Base.active_project())");
-@show nprocs();
+# Test parameter seraching
 
-# Load library to workers
-@time @everywhere import RetroSignalModel as rs
+import RetroSignalModel as rs
 
 # Parameter searching
-@time rs.paramSearching(rs.rtgM4(); num_sim=3, distributed=true, saveall=true)
+@time rs.search_params(rs.rtgM4(); num_sim=3, distributed=false, saveall=true)
