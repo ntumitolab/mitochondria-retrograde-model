@@ -7,7 +7,8 @@ using DifferentialEquations
 """
 Scan for parameters that meet the boolean conditions
 """
-function param_scan(Model=rtgMTK;
+function param_scan(
+    Model=rtgMTK;
     trajectories=1000,
     batch_size=trajectories,
     proteinlevels=STRESSED,
