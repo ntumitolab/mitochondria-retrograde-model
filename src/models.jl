@@ -1,8 +1,6 @@
 # RTG model(s)
 using ModelingToolkit
 
-export rtgMTK
-
 """
 ```julia
 hil(x, k, n=1)
@@ -22,8 +20,6 @@ ZERO_SIGNAL(t) = 0
 """Damage signal = 1"""
 ONE_SIGNAL(t) = 1
 
-# Protein levels based on expression levels
-@parameters ΣRtg1 ΣRtg2 ΣRtg3 ΣMks ΣBmh
 
 const STRESSED = Dict(
     ΣRtg1 => 17.2068,
@@ -43,8 +39,6 @@ const UNSTRESSED = Dict(
 
 # Distributions of RTG1 and RTG3 proteins
 
-@variables t Rtg13A_c(t) Rtg13I_c(t) Rtg13A_n(t) Rtg13I_n(t) Rtg3I_c(t) Rtg3A_c(t) Rtg3A_n(t) Rtg3I_n(t) Rtg1_c(t) Rtg1_n(t)
-
 rtg13_nucleus(sol) = sol[Rtg13I_n] + sol[Rtg13A_n]
 rtg13_cytosol(sol) = sol[Rtg13I_c] + sol[Rtg13A_c]
 rtg3_nucleus(sol) = rtg13_nucleus(sol) + sol[Rtg3A_n] + sol[Rtg3I_n]
@@ -59,29 +53,21 @@ rtgMTK(S = DEFAULT_SIGNAL; name, proteinlevels=STRESSED)
 
 Make a RTG signalling model with a time-dependent damage signal function `S`.
 """
-function rtgMTK(S=ZERO_SIGNAL; name, proteinlevels=STRESSED)
+function rtgMTK(S=ZERO_SIGNAL; name, proteinlevels=STRESSED, simplify=true)
+
     D = Differential(t)
 
     # Modulation Layer
-    @variables s(t) Rtg2I_c(t) Rtg2A_c(t) v_01(t)
-    @parameters ksV ksD n_S k2I mul_S = 1 nRuns = 0
-    @variables Mks(t) Rtg2Mks_c(t) Bmh(t) BmhMks(t) v_02(t) v_03(t)
-    @parameters k2M, kn2M, kBM, knBM
+    @variables v_01(t) v_02(t) v_03(t)
 
     # Nuclear Localization Signal (NLS) activation
     @variables v_04(t) v_05(t) v_06(t)
-    @parameters k13I k13IV k13ID k3A_c k3I_c k3I_n
 
     # Rtg1Binding: Rtg13 formation
     @variables v_07(t) v_08(t) v_09(t) v_10(t)
-    @parameters k13_c kn13_c k13_n kn13_n
 
     # Translocation
     @variables v_11(t) v_12(t) v_13(t)
-    @parameters k1in k1out k3inA k3outA k3inI k3outI
-
-    # Conservation relationships
-    @parameters ΣRtg1 ΣRtg2 ΣRtg3 ΣMks ΣBmh
 
     # MTK does not support elimination in overdetermined systems
     # ODEs are eliminated manually
@@ -140,20 +126,15 @@ function rtgMTK(S=ZERO_SIGNAL; name, proteinlevels=STRESSED)
         nRuns ~ nRuns
     ]
 
-    return ODESystem(eqs, t; name, defaults=proteinlevels)
+    sys = ODESystem(eqs, t; name, defaults=proteinlevels)
+
+    if simplify
+        sys = structural_simplify(sys)
+    end
+    return sys
 end
 
 """
 Resting initial conditions = all zeroes.
 """
 resting_u0(sys) = zeros(length(states(sys)))
-
-@named model = rtgMTK()
-
-parameters(model)
-
-simp = structural_simplify(model)
-
-simp.nRuns = 0
-
-simp.nRuns
