@@ -5,7 +5,7 @@ using Tables
 using DifferentialEquations
 
 """
-Scan for parameters that meet the boolean conditions
+Scan for parameters that meet the boolean conditions in the retrograde (RTG) signalling model.
 """
 function param_scan(
     Model=rtgMTK;
@@ -18,7 +18,8 @@ function param_scan(
     rollhill=() -> rand(0.5:0.5:5.0),
     nuclearRatioThreshold=10,
     steadyStateSolver=DynamicSS(Rodas5()),
-    ensembleSolver=EnsembleThreads()
+    ensembleSolver=EnsembleThreads(),
+    ntarget=100
 )
 
     conds = Tables.rowtable(dropmissing(CSV.read(datafile, DataFrame), disallowmissing=true))
@@ -26,49 +27,29 @@ function param_scan(
     @named sys = Model(ONE_SIGNAL; proteinlevels=proteinlevels)
 
     param2idx = Dict(k => i for (i, k) in enumerate(parameters(sys)))
+    idxnRuns = param2idx[nRuns]
+
+    prob = SteadyStateProblem(sys, resting_u0(sys))
+
+    # Initalize parameters for the first batch
+    batchParams = exp10.(rand(-3:0.1:3, batch_size, length(parameters(sys))))
+    batchParams[:, param2idx[n_S]] .= rand(0.5:0.5:5.0, batch_size, 1)
+
 
     # select random param for a fresh problem
-    # rerun for each conditions
-    function prob_func(prob, i, repeat)
-        cond_idx = repeat + 1
+    # repeat for each conditions
+    function prob_func(prob, i, iter)
         params = prob.p
-        params[param2idx[nRuns]] = cond_idx
-
-        # Initalize parameters for the first run
-        if cond_idx == 1
-            for k in (ksV, ksD, k2I, k2M, kn2M, kBM, knBM, k13I, k13IV, k13ID, k3A_c, k3I_c, k3I_n, k13_c, kn13_c, k13_n, kn13_n, k1in, k1out, k3inA, k3outA, k3inI, k3outI)
-                params[param2idx[k]] = rollparams()
-            end
-            params[param2idx[n_S]] = rollhill()
-        end
+        params .= batchParams[i%batch_size+1, :]
+        params[idxnRuns] = iter
 
         # Adjust params according to conditions
-        cond = conds[cond_idx]
-
-        # Knockout Rtg1
-        if cond[:Rtg1] == 0
-            params[param2idx[ΣRtg1]] = knockoutlevel
-        end
-
-        # Knockout Rtg2
-        if cond[:Rtg2] == 0
-            params[param2idx[ΣRtg2]] = knockoutlevel
-        end
-
-        # Knockout Rtg3
-        if cond[:Rtg3] == 0
-            params[param2idx[ΣRtg3]] = knockoutlevel
-        end
-
-        # Knockout Mks
-        if cond[:Mks] == 0
-            params[param2idx[ΣMks]] = knockoutlevel
-        end
-
-        # Turn off signal
-        if cond[:s] == 0
-            params[param2idx[mul_S]] = 0
-        end
+        cond = conds[iter]
+        params[param2idx[ΣRtg1]] = ifelse(cond[:Rtg1] == 0, knockoutlevel, proteinlevels[ΣRtg1])
+        params[param2idx[ΣRtg2]] = ifelse(cond[:Rtg2] == 0, knockoutlevel, proteinlevels[ΣRtg2])
+        params[param2idx[ΣRtg3]] = ifelse(cond[:Rtg3] == 0, knockoutlevel, proteinlevels[ΣRtg3])
+        params[param2idx[ΣMks]] = ifelse(cond[:Mks] == 0, knockoutlevel, proteinlevels[ΣMks])
+        params[param2idx[mul_S]] = cond[:s]
 
         remake(prob, p=params)
     end
@@ -77,18 +58,18 @@ function param_scan(
         cond = conds[idx]
         if cond[:gfp] == "rtg3"
             if cond[:Trans2Nuc] == 1
-                rerun = rtg3_nucleus(sol) > nuclearRatioThreshold * rtg3_cytosol(sol)
+                passed = rtg3_nucleus(sol) > nuclearRatioThreshold * rtg3_cytosol(sol)
             else
-                rerun = nuclearRatioThreshold * rtg3_nucleus(sol) < rtg3_cytosol(sol)
+                passed = nuclearRatioThreshold * rtg3_nucleus(sol) < rtg3_cytosol(sol)
             end
         elseif cond[:gfp] == "rtg1"
             if cond[:Trans2Nuc] == 1
-                rerun = rtg1_nucleus(sol) > nuclearRatioThreshold * rtg1_cytosol(sol)
+                passed = rtg1_nucleus(sol) > nuclearRatioThreshold * rtg1_cytosol(sol)
             else
-                rerun = nuclearRatioThreshold * rtg1_nucleus(sol) < rtg1_cytosol(sol)
+                passed = nuclearRatioThreshold * rtg1_nucleus(sol) < rtg1_cytosol(sol)
             end
         end
-        return rerun
+        return passed
     end
 
     # rerun when passed a condition and number for runs < number of conditions
@@ -101,17 +82,22 @@ function param_scan(
 
     # Only add valid, all tests apassed results
     function reduction(u, batch, I)
+
         for sol in batch
             idx = Int(sol.prob.p[param2idx[nRuns]])
             if idx == length(conds) && pass_cond(idx, conds, sol)
-                push!(u, sol)
+                u = push!(u, sol)
             end
         end
 
-        return (u, false)
+        # Repopulate new parameters for the batch
+        batchParams = exp10.(rand(-3:0.1:3, batch_size, length(parameters(sys))))
+        batchParams[:, param2idx[n_S]] .= rand(0.5:0.5:5.0, batch_size, 1)
+
+        return (u, length(u) >= ntarget)
     end
 
-    prob = EnsembleProblem(SteadyStateProblem(sys, resting_u0(sys), []); output_func, prob_func, reduction)
+    ensprob = EnsembleProblem(prob; output_func, prob_func, reduction)
 
-    sim = solve(prob, steadyStateSolver, ensembleSolver; trajectories, batch_size)
+    sim = solve(ensprob, steadyStateSolver, ensembleSolver; trajectories, batch_size)
 end
