@@ -91,7 +91,7 @@ function param_scan(
         end
 
         # Repopulate new parameters for the batch
-        batchParams = exp10.(rand(-3:0.1:3, batch_size, length(parameters(sys))))
+        batchParams .= exp10.(rand(-3:0.1:3, batch_size, length(parameters(sys))))
         batchParams[:, param2idx[n_S]] .= rand(0.5:0.5:5.0, batch_size, 1)
 
         return (u, length(u) >= ntarget)
