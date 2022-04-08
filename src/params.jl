@@ -13,7 +13,7 @@ function param_scan(
     batch_size=trajectories,
     proteinlevels=STRESSED,
     knockoutlevel=1e-6,
-    datafile=joinpath(@__DIR__, "data", "boolean_table_RTG13.csv"),
+    conddatafile=joinpath(@__DIR__, "data", "boolean_table_RTG13.csv"),
     rollparams=() -> exp10(rand(-3:0.1:3)),
     rollhill=() -> rand(0.5:0.5:5.0),
     nuclearRatioThreshold=10,
@@ -21,8 +21,8 @@ function param_scan(
     ensembleSolver=EnsembleThreads(),
     ntarget=100
 )
-
-    conds = Tables.rowtable(dropmissing(CSV.read(datafile, DataFrame), disallowmissing=true))
+    # Boolean conditions
+    conds = Tables.rowtable(dropmissing(CSV.read(conddatafile, DataFrame), disallowmissing=true))
 
     @named sys = Model(ONE_SIGNAL; proteinlevels=proteinlevels)
 

@@ -17,6 +17,7 @@ hil(x, k, n) = hil(x^n, k^n)
 
 """Damage signal = 0"""
 ZERO_SIGNAL(t) = 0
+
 """Damage signal = 1"""
 ONE_SIGNAL(t) = 1
 
