@@ -16,7 +16,6 @@ RUN pip install --no-cache-dir -U pip wheel setuptools \
 
 # Build Julia environment
 COPY Project.toml Manifest.toml build_kernel.jl ./
-COPY src ./src
 RUN julia --threads=auto --color=yes --project=@. -e 'import Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile()' && julia --threads=auto --color=yes build_kernel.jl
 
 # Julia command
