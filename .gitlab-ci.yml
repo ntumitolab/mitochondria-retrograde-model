@@ -1,4 +1,4 @@
-# "merge_request" workflow (https://docs.gitlab.com/ee/ci/yaml/workflow.html)
+# Using "merge_request into main" workflow (https://docs.gitlab.com/ee/ci/yaml/workflow.html)
 include:
   - template: "Workflows/MergeRequest-Pipelines.gitlab-ci.yml"
 
@@ -7,22 +7,16 @@ stages:
   - test
   - deploy
 
-default:
-  image: registry.gitlab.com/sosiristseng/docker-juliabook:latest
-
-variables:
-  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia"
-
 # GitLab CI: Auto dependency updates https://thacoon.com/posts/gitlab-ci-auto-dependency-update/
 # `GIT_PUSH_TOKEN` CI/CD variable = personal access token (PAT) with write access
 update-julia:
-  # tags:
-  #   - md705
+  image: julia:1.7
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   variables:
     JULIA_PKG_PRECOMPILE_AUTO: 0
   script:
+    - apt-get update && apt-get install -y --no-install-recommends git
     - julia --color=yes --threads=auto --project=@. -e 'import Pkg; Pkg.update()'
     # Open a MR when there is a update, requires GIT_PUSH_TOKEN` CI/CD variable = personal access token (PAT) with write access
     - |
@@ -48,41 +42,52 @@ update-julia:
       fi
 
 build-notebooks:
-  tags:
-    - md705
+  image: registry.gitlab.com/sosiristseng/docker-juliabook:latest
+  # tags:
+  #   - your_runner
   stage: test
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+  variables:
+    JULIA_DEPOT_PATH: "$CI_PROJECT_PATH/.julia"
   cache:
     - key:
         files:
+          - Project.toml
           - Manifest.toml
           - requirements.txt
         prefix: jb
       paths:
         - docs/_build/.jupyter_cache
-    - key: julia-1.7
+    - key:
+        files:
+          - Project.toml
+          - Manifest.toml
+        prefix: julia
       paths:
-        - $CI_PROJECT_DIR/.julia/
+        - $CI_PROJECT_PATH/.julia/artifacts
+        - $CI_PROJECT_PATH/.julia/compiled
+        - $CI_PROJECT_PATH/.julia/packages
+        - $CI_PROJECT_PATH/.julia/registries
   before_script:
-    - julia --color=yes --threads=auto --project=@. -e 'import Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile()'
-    - julia --color=yes --threads=auto -e 'import Pkg; Pkg.add("IJulia"); Pkg.build("IJulia")'
-    - jb build docs --warningiserror --keep-going -v
+    - julia --project=@. -e 'using Pkg; Pkg.instantiate()'
+    - julia -e 'using Pkg; Pkg.add("IJulia"); Pkg.build("IJulia")'
+    # Uncomment if you want parallel notebook execution
+    # - find docs -type f -name "*.ipynb" -print0 | parallel -0 -j2 jupyter nbconvert --to notebook --ExecutePreprocessor.timeout=600 --ExecutePreprocessor.kernel_name=julia-1.7 --execute --inplace {}
+    - jupyter-book build docs --warningiserror --keep-going -v
   script:
-    - echo "Test complete!"
+    - "Test build completed."
   artifacts:
     paths:
       - docs/_build/
-    expire_in: 1 week
 
 pages:
   extends: build-notebooks
-  stage: deploy
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
   script:
     - mv docs/_build/html public
-    - find public -type f -regex '.*\.\(htm\|html\|txt\|text\|js\|css\|svg\|xml\)$' -exec gzip -f -k {} \; -exec brotli -f -k {} \; || echo 'Compression failed. Skipping...'
+    - find public -type f -regex '.*\.\(htm\|html\|txt\|text\|js\|css\|svg\|xml\)$' -exec gzip -f -k {} \; -exec  -f -k {} \; || echo 'Compression failed. Skipping...'
   artifacts:
     paths:
       - public
