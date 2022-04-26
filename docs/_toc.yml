@@ -7,4 +7,4 @@ chapters:
   - file: model_desc
   - file: expression-level
   - file: steadystates
-  - file: validation
+  # - file: validation
