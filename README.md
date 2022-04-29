@@ -12,28 +12,6 @@ Forked from Steven's results: <https://github.com/ntumitolab/MitoRetroDynamics>
 2. Julia (version 1.7+)
 3. IJulia
 
-### Pip3 installation
-
-jill (https://github.com/abelsiqueira/jill) is a light installer of Julia on Linux. To install jill, pip3 (https://pip.pypa.io/en/stable/) is required.
-
-**pip3 installation**
-
-```
-sudo apt-get install python3-pip
-```
-
-### Install Scipy
-
-```
-pip3 install scipy
-```
-
-### Install matplotlib
-
-```
-pip3 install matplotlib
-```
-
 ### JupyterLab installation
 
 The simulations are executed and displayed via JupyterLab. It is an IDE for literal programming. In this project, Julia kernel is used in Jupyterlab, and extra installation is needed to use Julia with Jupyterlab.
