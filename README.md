@@ -8,12 +8,9 @@ Forked from Steven's results: <https://github.com/ntumitolab/MitoRetroDynamics>
 
 ## Requirements
 
-1. pip3
-2. Scipy
-3. Matplotlib
-4. Jupyter lab
-5. Julia (version 1.7+)
-6. IJulia
+1. Jupyter lab
+2. Julia (version 1.7+)
+3. IJulia
 
 ### Pip3 installation
 
