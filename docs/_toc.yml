@@ -6,5 +6,6 @@ root: index
 chapters:
   - file: model-desc
   - file: expression-level
+  - file: expression-level-effects
   - file: steadystates
   - file: validation
