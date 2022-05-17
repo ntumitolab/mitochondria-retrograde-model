@@ -43,7 +43,7 @@ This folder contains summarized responses of mitochondrial retrograde signaling 
 
 ### Definition of Response
 
-In [1] and [2], RTG response is observed via GFP tags on either RTG1 or RTG3. In wild-type, mitochondrial damage can cause these proteins to accumulate in the nucleus, resulting in the intensified brightness of the nucleus region observed by fluorescent microscopy. As shown in [boolean_table_RTG13.csv](src/data/boolean_table_RTG13.csv), the responses are categorized in binary results: whether GFP is accumulated in the nucleus in a given condition. Based on [1] and [2], there are 20 reactions listed in the table.
+In [1] and [2], RTG response is observed via GFP tags on either RTG1 or RTG3. In wild-type, mitochondrial damage can cause these proteins to accumulate in the nucleus, resulting in the intensified brightness of the nucleus region observed by fluorescent microscopy. As shown in [boolean_table_RTG13.csv](https://github.com/ntumitolab/mitochondria-retrograde-model/blob/main/src/data/boolean_table_RTG13.csv), the responses are categorized in binary results: whether GFP is accumulated in the nucleus in a given condition. Based on [1] and [2], there are 20 reactions listed in the table.
 
 For example, the following is one of the conditions mentioned in [1]:
 
