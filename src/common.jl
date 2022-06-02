@@ -6,6 +6,7 @@ using Tables
 # State variable and parameters
 @variables t
 @variables Rtg13A_c(t) Rtg13I_c(t) Rtg13A_n(t) Rtg13I_n(t) Rtg3I_c(t) Rtg3A_c(t) Rtg3A_n(t) Rtg3I_n(t) Rtg1_c(t) Rtg1_n(t)
+@variables Rtg13_n(t) Rtg13_c(t) Rtg3_n(t) Rtg3_c(t) ΣRtg1_n(t) ΣRtg1_c(t)
 @variables s(t) Rtg2I_c(t) Rtg2A_c(t)
 @variables Mks(t) Rtg2Mks_c(t) Bmh(t) BmhMks(t)
 @parameters ΣRtg1 ΣRtg2 ΣRtg3 ΣMks ΣBmh
