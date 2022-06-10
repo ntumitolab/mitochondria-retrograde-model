@@ -6,6 +6,8 @@ jobs:
   Create-MyBinderOrg-Cache:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
       - name: cache binder build on mybinder.org
         uses: jupyterhub/repo2docker-action@master
         with:
