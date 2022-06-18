@@ -9,7 +9,7 @@ WORKDIR /usr/src/app
 # RUN pip install --no-cache-dir -r requirements.txt
 
 # Build Julia environment
-COPY Project.toml Manifest.toml build.jl ./
+COPY Project.toml Manifest.toml setup.jl ./
 COPY src/ src
 RUN julia --threads=auto --color=yes --project=@. setup.jl
 
