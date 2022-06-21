@@ -2,8 +2,10 @@ using RetroSignalModel
 using Optim
 using CSV
 
-optim_params(targetratio=5)
+versioninfo()
 
-dfparams = optim_params_threads(120; targetratio=5)
+optim_params(targetratio=2)
 
-CSV.write("solution_rtgMTK_optim_5x.csv", dfparams)
+dfparams = optim_params_threads(200; targetratio=2)
+
+CSV.write("solution_rtgMTK_optim_2x.csv", dfparams)
