@@ -15,7 +15,7 @@ function optim_params(
     datafile=joinpath(@__DIR__, "data", "boolean_table_RTG13.csv"),
     knockoutlevel=1e-4,
     proteinlevels=STRESSED,
-    steadyStateSolver=DynamicSS(Rodas5()),
+    desolver=DynamicSS(Rodas5()),
     lowerbound=1e-3,
     upperbound=1e3,
     hilllowerbound=2.0,
@@ -23,7 +23,7 @@ function optim_params(
     xinit=1.0,
     optimsolver=Optim.SAMIN(),
     optimoptions=Optim.Options(iterations=10^5, show_trace=true, show_every=1000),
-    targetratio=10)
+    targetratio=2)
 
     # Boolean conditions
     conds = load_data(datafile)
@@ -70,14 +70,14 @@ function optim_params(
             # Calculate cost for this steady state solution
             # Since the objective is nuclear accumulation or not
             # The cost is the logarithm of protein concentration ratios (nuclear vs cytosol)
-            sol = solve(remake(prob, p=params), steadyStateSolver)
+            sol = solve(remake(prob, p=params), desolver)
 
             if cond[:gfp] == "rtg3"
                 score = -log10(rtg3_nucleus(sol) / rtg3_cytosol(sol)) * ifelse(cond[:Trans2Nuc] == 1, 1, -1)
             elseif cond[:gfp] == "rtg1"
                 score = -log10(rtg1_nucleus(sol) / rtg1_cytosol(sol)) * ifelse(cond[:Trans2Nuc] == 1, 1, -1)
             else
-                score = 0
+                score = 0.0
             end
             score = max(score - scorecap, zero(score))
             Σcost += score
@@ -87,12 +87,9 @@ function optim_params(
     end
 
     # Initial conditions and lower / upper bounds for Optim
-    x0 = similar(xi2params, Float64)
-    x0 .= xinit
-    lb = similar(x0)
-    lb .= lowerbound
-    ub = similar(x0)
-    ub .= upperbound
+    x0 = ones(length(xi2params)) .* xinit
+    lb = ones(length(xi2params)) .* lowerbound
+    ub = ones(length(xi2params)) .* upperbound
     ub[xidxnS] = hillupperbound
     lb[xidxnS] = hilllowerbound
     x0 .= clamp.(x0, lb, ub)
