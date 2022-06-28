@@ -102,7 +102,7 @@ end
 
 """Find n parameter sets using multithreading"""
 function optim_params_threads(n::Int, Model=RtgMTK; optimoptions=Optim.Options(iterations=10^5), kwargs...)
-    parammaps = ThreadsX.map(1:n) do i
+    parammaps = ThreadsX.map(1:n) do _
         res = optim_params(Model; optimoptions=optimoptions, kwargs...)
         res.parammap
     end
