@@ -4,8 +4,6 @@ using SteadyStateDiffEq
 using OrdinaryDiffEq
 using ModelingToolkit
 using Optim
-using ThreadsX
-using DataFrames
 
 """
 Find parameters that satisfy the boolean conditions in the retrograde (RTG) signalling model using Optimization methods.
@@ -30,7 +28,6 @@ function optim_params(
 
     @named sys = Model(ONE_SIGNAL; proteinlevels)
     prob = SteadyStateProblem(sys, resting_u0(sys))
-    params = copy(prob.p)
 
     # Indices to parameters in the system
     param2idx = Dict(k => i for (i, k) in enumerate(parameters(sys)))
@@ -42,7 +39,6 @@ function optim_params(
 
     # Parameters to be optimized
     params_optim = [k for k in parameters(sys) if !any(isequal(k), (ΣRtg1, ΣRtg2, ΣRtg3, ΣMks, ΣBmh, mul_S))]
-
     # Mapping indices of the x vector in Optim to params in the system
     xi2params = [param2idx[k] for k in params_optim]
     xidxnS = findfirst(isequal(n_S), params_optim)
@@ -52,26 +48,9 @@ function optim_params(
 
     # Cost function
     function cost(x)
-        Σcost = 0.0
-        for cond in conds
-            # params = copy(prob.p)
-            # Adjust params according to conditions
-            params[iΣRtg1] = cond[:Rtg1] == 0 ? knockoutlevel : proteinlevels[ΣRtg1]
-            params[iΣRtg2] = cond[:Rtg2] == 0 ? knockoutlevel : proteinlevels[ΣRtg2]
-            params[iΣRtg3] = cond[:Rtg3] == 0 ? knockoutlevel : proteinlevels[ΣRtg3]
-            params[iΣMks] = cond[:Mks] == 0 ? knockoutlevel : proteinlevels[ΣMks]
-            params[imul_S] = cond[:s]
 
-            # Assign optim vector to ODE parameters
-            for i in 1:length(x)
-                params[xi2params[i]] = x[i]
-            end
-
-            # Calculate cost for this steady state solution
-            # Since the objective is nuclear accumulation or not
-            # The cost is the logarithm of protein concentration ratios (nuclear vs cytosol)
-            sol = solve(remake(prob, p=params), desolver)
-
+        function output_func(sol, i)
+            cond = conds[i]
             if cond[:gfp] == "rtg3"
                 score = -log10(rtg3_nucleus(sol) / rtg3_cytosol(sol)) * ifelse(cond[:Trans2Nuc] == 1, 1, -1)
             elseif cond[:gfp] == "rtg1"
@@ -79,11 +58,29 @@ function optim_params(
             else
                 score = 0.0
             end
-            score = max(score - scorecap, zero(score))
-            Σcost += score
+            return (max(score - scorecap, 0.0), false)
         end
 
-        return Σcost / length(conds)
+        function prob_func(prob, i, repeat)
+            cond = conds[i]
+            p = prob.p
+            # Adjust params according to conditions
+            p[iΣRtg1] = cond[:Rtg1] == 0 ? knockoutlevel : proteinlevels[ΣRtg1]
+            p[iΣRtg2] = cond[:Rtg2] == 0 ? knockoutlevel : proteinlevels[ΣRtg2]
+            p[iΣRtg3] = cond[:Rtg3] == 0 ? knockoutlevel : proteinlevels[ΣRtg3]
+            p[iΣMks] = cond[:Mks] == 0 ? knockoutlevel : proteinlevels[ΣMks]
+            p[imul_S] = cond[:s]
+
+            # Assign optim vector to ODE parameters
+            for i in 1:length(x)
+                p[xi2params[i]] = x[i]
+            end
+            return remake(prob, p=p)
+        end
+
+        eprob = EnsembleProblem(prob; output_func, prob_func)
+        esol = solve(eprob, desolver, EnsembleThreads(), trajectories=length(conds))
+        return sum(esol) / length(conds)
     end
 
     # Initial conditions and lower / upper bounds for Optim
@@ -98,13 +95,4 @@ function optim_params(
     parammap = Dict(params_optim .=> Optim.minimizer(res))
 
     return (res=res, parammap=parammap)
-end
-
-"""Find n parameter sets using multithreading"""
-function optim_params_threads(n::Int, Model=RtgMTK; optimoptions=Optim.Options(iterations=10^5), kwargs...)
-    parammaps = ThreadsX.map(1:n) do _
-        res = optim_params(Model; optimoptions=optimoptions, kwargs...)
-        res.parammap
-    end
-    return DataFrame(parammaps)
 end
