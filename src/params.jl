@@ -1,7 +1,5 @@
 # Parameter searching to meet the conditions
-using SciMLBase
-using SteadyStateDiffEq
-using OrdinaryDiffEq
+using DifferentialEquations
 using ModelingToolkit
 using Optim
 
@@ -65,10 +63,10 @@ function optim_params(
             cond = conds[i]
             p = prob.p
             # Adjust params according to conditions
-            p[iΣRtg1] = cond[:Rtg1] == 0 ? knockoutlevel : proteinlevels[ΣRtg1]
-            p[iΣRtg2] = cond[:Rtg2] == 0 ? knockoutlevel : proteinlevels[ΣRtg2]
-            p[iΣRtg3] = cond[:Rtg3] == 0 ? knockoutlevel : proteinlevels[ΣRtg3]
-            p[iΣMks] = cond[:Mks] == 0 ? knockoutlevel : proteinlevels[ΣMks]
+            p[iΣRtg1] = cond[:Rtg1] == 0 ? knockoutlevel : p[iΣRtg1]
+            p[iΣRtg2] = cond[:Rtg2] == 0 ? knockoutlevel : p[iΣRtg2]
+            p[iΣRtg3] = cond[:Rtg3] == 0 ? knockoutlevel : p[iΣRtg3]
+            p[iΣMks] = cond[:Mks] == 0 ? knockoutlevel : p[iΣMks]
             p[imul_S] = cond[:s]
 
             # Assign optim vector to ODE parameters

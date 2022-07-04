@@ -1,7 +1,5 @@
 using ModelingToolkit
-using OrdinaryDiffEq
-using SteadyStateDiffEq
-using SciMLBase
+using DifferentialEquations
 
 
 """
