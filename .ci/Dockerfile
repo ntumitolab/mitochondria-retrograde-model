@@ -1,17 +1,26 @@
-FROM ghcr.io/sosiristseng/docker-juliabook:1.7.3.11
-
-ENV LC_ALL C.UTF-8
+FROM python:3.10-slim
 
 WORKDIR /usr/src/app
 
-# Python deps (matplotlib)
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 
-# Build Julia environment
+# System
+RUN apt-get update && apt-get install -y build-essential git gzip brotli parallel --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
+# Julia
+ENV JULIA_PATH /usr/local/julia/
+ENV PATH $JULIA_PATH/bin:$PATH
+COPY --from=julia:1.8.0-rc1 ${JULIA_PATH} /usr/local/
+
+# Python dependencies
+COPY .ci/requirements.txt .ci/requirements.txt
+RUN pip install --no-cache-dir -U pip wheel setuptools \
+    && pip install --no-cache-dir -r .ci/requirements.txt
+
+# Julia dependencies
 COPY Project.toml Manifest.toml ./
 COPY src/ src
-RUN julia --threads=auto --color=yes --project=@. -e 'import Pkg; Pkg.instantiate()'
+RUN julia --threads=auto --color=yes --project="" -e 'import Pkg; Pkg.add("IJulia")' && julia --threads=auto --color=yes --project=@. -e 'import Pkg; Pkg.instantiate()'
 
-# Julia command
 CMD ["jupyter-book"]

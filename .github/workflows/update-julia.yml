@@ -1,14 +1,14 @@
 name: Auto update Julia dependencies
 
 env:
-  JULIA_VERSION: "1.7"
+  JULIA_VERSION: '~1.8.0-0'
   JULIA_PKG_PRECOMPILE_AUTO: 0
   JULIA_NUM_THREADS: 2
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 0" # Every week
+    - cron: '0 0 * * 0' # Every week
 
 jobs:
   update-notebook:

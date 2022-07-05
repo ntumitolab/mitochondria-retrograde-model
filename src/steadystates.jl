@@ -2,9 +2,6 @@ using ModelingToolkit
 using DifferentialEquations
 
 
-"""
-Find steady states of the ODE system `sys` by randomly
-"""
 function find_steady_states(;
     S=ZERO_SIGNAL, proteins=STRESSED, params=Dict(),
     trajectories=10, batch_size=trajectories, ntarget=trajectories,

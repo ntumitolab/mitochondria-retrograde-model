@@ -12,6 +12,7 @@ function optim_params(
     knockoutlevel=1e-4,
     proteinlevels=STRESSED,
     desolver=DynamicSS(Rodas5()),
+    ensemble_method=EnsembleThreads(),
     lowerbound=1e-3,
     upperbound=1e3,
     hilllowerbound=2.0,
@@ -77,7 +78,7 @@ function optim_params(
         end
 
         eprob = EnsembleProblem(prob; output_func, prob_func)
-        esol = solve(eprob, desolver, EnsembleThreads(), trajectories=length(conds))
+        esol = solve(eprob, desolver, ensemble_method, trajectories=length(conds))
         return sum(esol) / length(conds)
     end
 
