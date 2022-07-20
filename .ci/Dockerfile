@@ -1,4 +1,4 @@
-FROM ghcr.io/sosiristseng/docker-juliabook:1.8.0rc1
+FROM ghcr.io/sosiristseng/docker-juliabook:1.8.0rc3
 
 WORKDIR /usr/src/app
 
