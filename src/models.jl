@@ -56,7 +56,7 @@ function RtgMTK(
     simplify=true)
 
     D = Differential(t)
-    @variables v[1:13](t)
+    @variables (v(t))[1:13]
 
     # MTK does not support elimination in overdetermined systems
     # ODEs are eliminated manually
