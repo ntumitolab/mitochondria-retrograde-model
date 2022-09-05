@@ -31,6 +31,7 @@ jobs:
           outputs: type=cacheonly
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
   execute:
     needs: docker
     strategy:
@@ -99,6 +100,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_build/html/
+
   docker-push:
     needs: execute
     if: github.ref == 'refs/heads/main'
@@ -131,6 +133,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
   # Deployment pages
   deploy:
     needs: jupyter-book
