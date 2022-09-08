@@ -1,14 +1,14 @@
 name: Build Docker Image and Jupyter Notebooks
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
@@ -31,6 +31,11 @@ jobs:
           outputs: type=cacheonly
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Cache Image
+        uses: actions/cache@v3
+        with:
+          path: /tmp/myimage.tar
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/requirements.txt', '**/Dockerfile', '**/Manifest.toml', '**/Project.toml') }}
 
   execute:
     needs: docker
@@ -47,16 +52,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: docker/setup-buildx-action@v2
-      - name: Build Docker Image
-        uses: docker/build-push-action@v3
+      - name: Cache Image
+        uses: actions/cache@v3
         with:
-          context: .
-          file: .ci/Dockerfile
-          load: true
-          tags: ${{ env.IMAGE_NAME }}:test
-          cache-from: type=gha
-
+          path: /tmp/myimage.tar
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/requirements.txt', '**/Dockerfile', '**/Manifest.toml', '**/Project.toml') }}
+      - name: Load Docker Image
+        run: |
+          docker load --input /tmp/myimage.tar
       - name: Build a Notebook
         run: >
           docker run -v ${{ github.workspace }}:/work
@@ -64,7 +67,6 @@ jobs:
           ${{ env.IMAGE_NAME }}:test
           jupyter nbconvert --to notebook --ExecutePreprocessor.timeout=1000 --execute --inplace
           /work/docs/${{ matrix.notebook }}.ipynb
-
       - name: Upload a Notebook
         uses: actions/upload-artifact@v3
         with:
@@ -81,10 +83,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VER }}
-          cache: 'pip'
-          cache-dependency-path: '.ci/requirements.txt'
       - name: Install dependencies
-        run: pip install -r .ci/requirements.txt
+        run: pip install jupyter-book
       - run: mkdir -p out
       - name: Download notebooks
         uses: actions/download-artifact@v3
@@ -93,7 +93,7 @@ jobs:
       - name: Move notebooks
         run: find out/ -type f -iname '*.ipynb' -exec mv -t docs/ {} +
       - name: Build website
-        run: jb build docs/ -v
+        run: jupyter-book build docs/ -v
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v2
@@ -103,7 +103,7 @@ jobs:
           path: docs/_build/html
 
   docker-push:
-    needs: execute
+    needs: [execute, docker]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
