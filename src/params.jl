@@ -78,7 +78,7 @@ function optim_params(
         end
 
         eprob = EnsembleProblem(prob; output_func, prob_func)
-        esol = solve(eprob, desolver, ensemble_method, trajectories=length(conds))
+        esol = solve(eprob, desolver, ensemble_method, trajectories=length(conds), DynamicSS(Rodas5()))
         return sum(esol) / length(conds)
     end
 
