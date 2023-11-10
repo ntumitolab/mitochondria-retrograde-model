@@ -1,11 +1,11 @@
 using ModelingToolkit
 using DifferentialEquations
-
+using NonlinearSolve
 
 function find_steady_states(;
     S=ZERO_SIGNAL, proteins=STRESSED, params=Dict(),
     trajectories=10, batch_size=trajectories, ntarget=trajectories,
-    solver=SSRootfind(), ensemble_method=EnsembleThreads()
+    ensemble_method=EnsembleThreads()
 )
 
     @named sys = RtgMTK(S; proteinlevels=proteins)
@@ -86,6 +86,7 @@ function find_steady_states(;
     end
 
     prob = SteadyStateProblem(sys, resting_u0(sys), params)
-    ensprob = EnsembleProblem(prob; output_func, prob_func, reduction)
-    return solve(ensprob, solver, ensemble_method; trajectories, batch_size)
+    nlprob = NonlinearProblem(prob)
+    ensprob = EnsembleProblem(nlprob; output_func, prob_func, reduction)
+    return solve(ensprob, ensemble_method; trajectories, batch_size)
 end
