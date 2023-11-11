@@ -2,7 +2,7 @@
 
 julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "a8b72af1bc0c8c4e26d3b9a16f4494ac8531dcb5"
+project_hash = "ec95c3708d3cd38177554853b7e3b647ec3c98e8"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "5d2e21d7b0d8c22f67483ef95ebdc39c0e6b6003"
@@ -1305,12 +1305,6 @@ deps = ["Dates", "PrecompileTools", "UUIDs"]
 git-tree-sha1 = "a935806434c9d4c506ba941871b327b96d41f2bf"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "2.8.0"
-
-[[deps.Peaks]]
-deps = ["Compat", "RecipesBase"]
-git-tree-sha1 = "1627365757c8b87ad01c2c13e55a5120cbe5b548"
-uuid = "18e31ff7-3703-566c-8e60-38913d67486b"
-version = "0.4.4"
 
 [[deps.Pipe]]
 git-tree-sha1 = "6842804e7867b115ca9de748a0cf6b364523c16d"
