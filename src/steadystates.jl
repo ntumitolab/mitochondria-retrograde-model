@@ -1,6 +1,5 @@
 using ModelingToolkit
 using DifferentialEquations
-using NonlinearSolve
 
 function find_steady_states(;
     S=ZERO_SIGNAL, proteins=STRESSED, params=Dict(),
@@ -86,7 +85,7 @@ function find_steady_states(;
     end
 
     prob = SteadyStateProblem(sys, resting_u0(sys), params)
-    nlprob = NonlinearProblem(prob)
-    ensprob = EnsembleProblem(nlprob; output_func, prob_func, reduction)
-    return solve(ensprob, ensemble_method; trajectories, batch_size)
+    alg = DynamicSS(Rodas5())
+    ensprob = EnsembleProblem(prob; output_func, prob_func, reduction)
+    return solve(ensprob, ensemble_method, alg; trajectories, batch_size)
 end
