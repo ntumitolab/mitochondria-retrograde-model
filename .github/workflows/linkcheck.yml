@@ -26,11 +26,7 @@ jobs:
       - name: Setup micromamba
         uses: mamba-org/setup-micromamba@v1
         with:
-          environment-name: jb
-          create-args: >-
-            python>=3.11
-            jupyter-book
-            docutils>=0.17.1,<0.18|>=0.20
+          environment-file: environment.yml
           cache-environment: true
           post-cleanup: all
       - name: Build website
