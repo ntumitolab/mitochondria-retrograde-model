@@ -48,7 +48,7 @@ jobs:
     - name: Install Julia packages
       run: |
         julia --color=yes -e 'using Pkg; Pkg.add(["IJulia"])'
-        julia --project=@. --color=yes -e 'using Pkg, Dates; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile(); Pkg.gc(collect_delay=Day(0))'
+        julia --project=@. --color=yes -e 'using Pkg, Dates; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile()'
     - name: Install IJulia kernel
       run: julia --color=yes -e 'using IJulia; installkernel("Julia", "--project=@.")'
     - name: Execute Notebooks
