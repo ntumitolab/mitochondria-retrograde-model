@@ -1,4 +1,4 @@
-name: CI with dynamic parallel matrix
+name: CI
 
 on:
   workflow_dispatch:
@@ -12,18 +12,17 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NJOBS: '6'
-  TIMEOUT: '-1'    # nbconvert timeout
-  EXTRA_ARGS: ''   # Extra arguments for nbconvert
+  NBCONVERT_JOBS: '4'
+  LITERATE_PROC: '2'
+  ALLOWERRORS: 'false'
   CACHE_NUM: '1'
-  JULIA_NUM_THREADS: 'auto'
   JULIA_CONDAPKG_BACKEND: 'Null'
   JULIA_CI: 'true'
-  PY_VER: '3.12'
+  NBCACHE: '.cache'
 
 jobs:
   CI:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -31,52 +30,77 @@ jobs:
       uses: actions/setup-python@v5
       id: cp
       with:
-        python-version: ${{ env.PY_VER }}
-    - name: Install python packages
-      run: pip install -r requirements.txt
-    - name: Read Julia version
-      uses: SebRollen/toml-action@v1.0.2
-      id: read_toml
+        python-version: '3.x'
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      id: cache-py
+      if: ${{ contains(runner.name, 'GitHub Actions') }}
       with:
-        file: 'Manifest.toml'
-        field: 'julia_version'
-    - name: Install Julia
+        path: ${{ env.pythonLocation }}
+        key:  ${{ runner.os }}-pip-${{ steps.cp.outputs.python-version }}-${{ hashFiles('requirements.txt') }}
+    - name: Install pip dependencies if cache miss
+      if: ${{ steps.cache-py.outputs.cache-hit != 'true' }}
+      run: pip install -r requirements.txt
+    - name: Cache executed notebooks
+      uses: actions/cache@v4
+      id: cache-nb
+      with:
+        path: ${{ env.NBCACHE }}
+        key: ${{ runner.os }}-nb-${{ env.CACHE_NUM }}-${{ hashFiles('src/**', 'Project.toml', 'Manifest.toml') }}-${{ hashFiles('docs/**/*.ipynb', 'docs/**/*.jl') }}
+        restore-keys: |
+          ${{ runner.os }}-nb-${{ env.CACHE_NUM }}-${{ hashFiles('src/**', 'Project.toml', 'Manifest.toml') }}-
+    - name: Read Julia version
+      id: read_toml
+      run: echo "value=$(python getjlver.py)" >> "$GITHUB_OUTPUT"
+    - name: Setup Julia
       uses: julia-actions/setup-julia@v1
       with:
         version: ${{ steps.read_toml.outputs.value }}
-        show-versioninfo: 'true'
+    - name: Restore Julia packages
+      uses: actions/cache/restore@v4
+      if: ${{ contains(runner.name, 'GitHub Actions') }}
+      id: cache-julia
+      with:
+        path: |
+          ~/.julia
+          !~/.julia/registries
+        key: ${{ runner.os }}-julia-${{ env.CACHE_NUM }}-${{ hashFiles('src/**', 'Project.toml', 'Manifest.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-julia-${{ env.CACHE_NUM }}-
     - name: Install Julia packages
-      run: |
-        julia --color=yes -e 'using Pkg; Pkg.add(["IJulia"])'
-        julia --project=@. --color=yes -e 'using Pkg, Dates; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile()'
-    - name: Install IJulia kernel
-      run: julia --color=yes -e 'using IJulia; installkernel("Julia", "--project=@.")'
-    - name: Execute Notebooks
-      run: >
-        find docs -type f -name '*.ipynb' |
-        parallel --joblog jobs.log -j${NJOBS} jupyter nbconvert --to notebook --execute --inplace ${{ env.EXTRA_ARGS }}
-        --ExecutePreprocessor.timeout=${{ env.TIMEOUT }}
-        --ExecutePreprocessor.kernel_name=julia-1.$(julia -e 'print(VERSION.minor)')
-        {}
-    - name: Show execution stats
-      run: cat jobs.log
+      if: ${{ contains(runner.name, 'GitHub Actions') && steps.cache-julia.outputs.cache-hit != 'true' }}
+      env:
+        PYTHON: ${{ env.pythonLocation }}/python
+      run: julia --color=yes instantiate.jl
+    - name: Save Julia packages
+      uses: actions/cache/save@v4
+      if: ${{ contains(runner.name, 'GitHub Actions') && steps.cache-julia.outputs.cache-hit != 'true' }}
+      with:
+        path: |
+          ~/.julia
+          !~/.julia/registries
+        key: ${{ steps.cache-julia.outputs.cache-primary-key }}
+    - name: Run notebooks
+      run: julia --color=yes -p ${{ env.LITERATE_PROC }} --heap-size-hint=4G run.jl
+    - name: Copy back built notebooks
+      run: cp --verbose -rf ${{ env.NBCACHE }}/docs/* docs/
     - name: Build website
       run: jupyter-book build docs/
     - name: Upload pages artifact
       if: ${{ github.ref == 'refs/heads/main' }}
-      uses: actions/upload-pages-artifact@v2
+      uses: actions/upload-pages-artifact@v3
       with:
         path: docs/_build/html/
 
-  # Deployment job
+  # Deploy pages
   deploy:
-    name: Deploy to GitHub pages
     needs: CI
     if: ${{ github.ref == 'refs/heads/main' }}
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
       pages: write # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
+      actions: read   # to download an artifact uploaded by `actions/upload-pages-artifact@v3`
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -84,4 +108,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
