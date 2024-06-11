@@ -9,7 +9,7 @@ function find_steady_states(;
 
     @named sys = RtgMTK(S; proteinlevels=proteins)
 
-    statesmap = Dict(k => i for (i, k) in enumerate(states(sys)))
+    statesmap = Dict(k => i for (i, k) in enumerate(unknowns(sys)))
 
     # Create a set of initial conditions respecting conservation relationships for the ensemble
     function make_u0()
