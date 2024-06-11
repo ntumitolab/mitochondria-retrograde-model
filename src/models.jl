@@ -133,4 +133,4 @@ end
 """
 Make resting initial conditions fot the system. Default to all zeros.
 """
-resting_u0(sys, val=0) = Dict(states(sys) .=> val)
+resting_u0(sys, val=0) = Dict(unknowns(sys) .=> val)
