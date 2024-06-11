@@ -2,7 +2,7 @@
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "650e9381cefa1f0d1756d093494d09a6d19dc829"
+project_hash = "fe53ccf8b54761d69b6084776f1e11904f157fb7"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "fc02d55798c1af91123d07915a990fbb9a10d146"
@@ -188,18 +188,6 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
 uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 version = "0.5.1"
-
-[[deps.Catalyst]]
-deps = ["DataStructures", "DiffEqBase", "DocStringExtensions", "Graphs", "JumpProcesses", "LaTeXStrings", "Latexify", "LinearAlgebra", "MacroTools", "ModelingToolkit", "Parameters", "Reexport", "Requires", "SparseArrays", "SymbolicUtils", "Symbolics", "Unitful"]
-git-tree-sha1 = "8e7e57c2ed4ecfb798f5a8cb230a9dd84765e7b1"
-uuid = "479239e8-5488-4da2-87a7-35f2df7eef83"
-version = "13.5.1"
-
-    [deps.Catalyst.extensions]
-    CatalystHomotopyContinuationExtension = "HomotopyContinuation"
-
-    [deps.Catalyst.weakdeps]
-    HomotopyContinuation = "f213a82b-91d6-5c5d-acf7-10f1c761b327"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra"]
